@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "dsharpbridge",
+  "version": "${version}",
+
+  "name": "DSharpBridge",
+  "description": "A simplistic Discord chat bridge.",
+  "license": "MPL 2.0",
+
+  "authors": [
+    {
+      "name": "thegiggitybyte",
+      "contact": {
+        "homepage": "https://discord.gg/UPKuVWgU4G",
+        "discord": "https://discord.gg/UPKuVWgU4G"
+      }
+    }
+  ],
+
+  "contact": {
+    "homepage": "https://discord.gg/UPKuVWgU4G",
+    "discord": "https://discord.gg/UPKuVWgU4G",
+    "sources": "https://github.com/Giggitybyte/DSharpBridge",
+    "issues": "https://github.com/Giggitybyte/DSharpBridge/issues"
+  },
+
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "me.thegiggitybyte.dsharpbridge.DSharpBridge"
+    ]
+  },
+  "mixins": [
+    "dsharpbridge.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.13.3",
+    "minecraft": "~1.18.2",
+    "java": ">=17"
+  }
+}
