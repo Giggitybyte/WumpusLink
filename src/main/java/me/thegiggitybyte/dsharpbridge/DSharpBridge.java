@@ -14,6 +14,7 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
@@ -129,10 +130,22 @@ public class DSharpBridge implements DedicatedServerModInitializer {
         
         if (author.getRoleColor().isPresent())
             userStyle.withColor(author.getRoleColor().get().getRGB());
+
+        var replyText = new LiteralText("");
+        var optionalMessageReference = event.getMessage().getMessageReference();
+        if(optionalMessageReference.isPresent() && optionalMessageReference.get().getMessage().isPresent()) {
+            var replyMessage = optionalMessageReference.get().getMessage().get();
+            var replyAuthor = replyMessage.getAuthor();
+            var replyInfoText = replyAuthor.getDiscriminatedName() + " (" + replyAuthor.getIdAsString() + ")\n\n" + replyMessage.getReadableContent();
+            var replyHoverEvent = HoverEvent.Action.SHOW_TEXT.buildHoverEvent(Text.of(replyInfoText));
+            var replyStyle = Style.EMPTY.withHoverEvent(replyHoverEvent).withColor(Formatting.AQUA);
+            replyText = (LiteralText) new LiteralText("[↩] ").setStyle(replyStyle); // hope that emoji works
+        }
         
         var senderText = new LiteralText(author.getDisplayName()).setStyle(userStyle);
         
-        messageText.append(senderText)
+        messageText.append(replyText)
+                .append(senderText)
                 .append("»")
                 .append(TextParser.parse(event.getReadableMessageContent())); // TODO: limit parsing to only markdown
         
