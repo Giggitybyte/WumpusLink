@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "dsharpbridge",
+  "id": "wumpuslink",
   "version": "${version}",
 
-  "name": "DSharpBridge",
+  "name": "WumpusLink",
   "description": "A simplistic Discord chat bridge.",
   "license": "MPL 2.0",
 
@@ -20,18 +20,18 @@
   "contact": {
     "homepage": "https://discord.gg/UPKuVWgU4G",
     "discord": "https://discord.gg/UPKuVWgU4G",
-    "sources": "https://github.com/Giggitybyte/DSharpBridge",
-    "issues": "https://github.com/Giggitybyte/DSharpBridge/issues"
+    "sources": "https://github.com/Giggitybyte/WumpusLink",
+    "issues": "https://github.com/Giggitybyte/WumpusLink/issues"
   },
 
   "environment": "server",
   "entrypoints": {
     "server": [
-      "me.thegiggitybyte.dsharpbridge.DSharpBridge"
+      "me.thegiggitybyte.wumpuslink.WumpusLink"
     ]
   },
   "mixins": [
-    "dsharpbridge.mixins.json"
+    "wumpuslink.mixins.json"
   ],
 
   "depends": {

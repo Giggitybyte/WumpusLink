@@ -1,4 +1,4 @@
-package me.thegiggitybyte.dsharpbridge;
+package me.thegiggitybyte.wumpuslink;
 
 import eu.pb4.placeholders.TextParser;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -33,20 +33,20 @@ public class MessageProxy {
         if (discordApi != null)
             discordApi.disconnect().join();
         
-        var token = DSharpBridge.getConfig().get("discord-bot-token");
+        var token = WumpusLink.getConfig().get("discord-bot-token");
         discordApi = new DiscordApiBuilder()
                 .setToken(token)
                 .login()
                 .join();
         
-        var channelId = DSharpBridge.getConfig().get("discord-channel-id");
+        var channelId = WumpusLink.getConfig().get("discord-channel-id");
         var channel = discordApi.getServerTextChannelById(channelId).orElseThrow();
         
         channel.addMessageCreateListener(MessageProxy::proxyMessageToMinecraft);
     }
     
     public static void proxyMessageToDiscord(String message, String senderName, UUID senderUuid) {
-        String webhookUrl = DSharpBridge.getConfig().get("discord-webhook-url");
+        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
         URL avatarUrl;
         
         if (senderUuid == null || senderUuid == Util.NIL_UUID)

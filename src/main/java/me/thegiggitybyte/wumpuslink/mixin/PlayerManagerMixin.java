@@ -1,6 +1,6 @@
-package me.thegiggitybyte.dsharpbridge.mixin;
+package me.thegiggitybyte.wumpuslink.mixin;
 
-import me.thegiggitybyte.dsharpbridge.MessageProxy;
+import me.thegiggitybyte.wumpuslink.MessageProxy;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
