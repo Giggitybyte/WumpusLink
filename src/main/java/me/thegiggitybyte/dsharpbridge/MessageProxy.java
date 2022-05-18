@@ -46,6 +46,7 @@ public class MessageProxy {
     }
     
     public static void proxyMessageToDiscord(String message, String senderName, UUID senderUuid) {
+        String webhookUrl = DSharpBridge.getConfig().get("discord-webhook-url");
         URL avatarUrl;
         
         if (senderUuid == null || senderUuid == Util.NIL_UUID)
@@ -53,12 +54,9 @@ public class MessageProxy {
         else
             avatarUrl = createUrl("https://crafatar.com/renders/head/" + senderUuid + "?default=MHF_Steve&overlay");
         
-        var webhookUrl = DSharpBridge.getConfig().get("discord-webhook-url");
         discordApi.getIncomingWebhookByUrl(webhookUrl).thenAcceptAsync(webhook -> {
-            webhook.sendMessage(message, senderName, avatarUrl)
-                    .exceptionally(ExceptionLogger.get())
-                    .join();
-        });
+            webhook.sendMessage(message, senderName, avatarUrl).join();
+        }).exceptionally(ExceptionLogger.get());
         
     }
     
