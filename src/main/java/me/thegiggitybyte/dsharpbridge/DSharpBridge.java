@@ -137,7 +137,7 @@ public class DSharpBridge implements DedicatedServerModInitializer {
             var replyMessage = optionalMessageReference.get().getMessage().get();
             var replyAuthor = replyMessage.getAuthor();
             var replyInfoText = replyAuthor.getDiscriminatedName() + " (" + replyAuthor.getIdAsString() + ")\n\n" + replyMessage.getReadableContent();
-            var replyHoverEvent = HoverEvent.Action.SHOW_TEXT.buildHoverEvent(Text.of(replyInfoText));
+            var replyHoverEvent = HoverEvent.Action.SHOW_TEXT.buildHoverEvent(new LiteralText(replyInfoText));
             var replyStyle = Style.EMPTY.withHoverEvent(replyHoverEvent).withColor(Formatting.AQUA);
             replyText = (LiteralText) new LiteralText("[↩] ").setStyle(replyStyle); // hope that emoji works
         }
