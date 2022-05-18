@@ -1,2 +1,2 @@
-# SharpBridge
-Simplistic Discord chat bridge for Minecraft Fabric.
+# WumpusLink
+Minimalistic Discord chat bridge for Minecraft Fabric.
