@@ -1,4 +1,4 @@
-package me.thegiggitybyte.dsharpbridge;
+package me.thegiggitybyte.dsharpbridge.error;
 
 public class ConfigurationFieldMissingError extends Error {
     public ConfigurationFieldMissingError(String fieldName) {
