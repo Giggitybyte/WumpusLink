@@ -9,29 +9,69 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.util.logging.ExceptionLogger;
 
 import java.net.URL;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class MessageProxy {
-    private final static URL DEFAULT_AVATAR_URL;
+    public final static URL DEFAULT_AVATAR_URL;
     
     private static DiscordApi discordApi;
     private static MinecraftServer minecraftServer;
     
     static {
-        DEFAULT_AVATAR_URL = createUrl("https://i.imgur.com/x4IwajC.png"); // Repeating command block
-        
+        DEFAULT_AVATAR_URL = WumpusLink.createUrl("https://i.imgur.com/x4IwajC.png"); // Repeating command block
         ServerLifecycleEvents.SERVER_STARTING.register(server -> minecraftServer = server);
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> discordApi.disconnect().join());
-        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resourceManager) -> initializeDiscord());
+        ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> connectToDiscord());
     }
     
-    public static void initializeDiscord() {
-        if (discordApi != null)
-            discordApi.disconnect().join();
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, String message) {
+        return sendMessageToDiscord(authorName, avatarUrl, message, null);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, EmbedBuilder embed) {
+        return sendMessageToDiscord(authorName, avatarUrl, null, embed);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, Text messageText) {
+        return sendMessageToDiscord(authorName, avatarUrl, messageText.getString());
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String message) {
+        return sendMessageToDiscord(null, null, message);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(EmbedBuilder embed) {
+        return sendMessageToDiscord(null, null, embed);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(Text messageText) {
+        return sendMessageToDiscord(null, null, messageText);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, String message, EmbedBuilder embed) {
+        if ((message == null || message.isBlank()) && embed == null)
+            throw new RuntimeException("message and embed cannot both be empty");
+        
+        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
+    
+        return discordApi.getIncomingWebhookByUrl(webhookUrl)
+                .exceptionally(ExceptionLogger.get())
+                .thenAcceptAsync(webhook -> {
+                    var author = (authorName == null || authorName.isBlank()) ? "Minecraft" : authorName;
+                    var avatar = avatarUrl == null ? DEFAULT_AVATAR_URL : avatarUrl;
+                    
+                    webhook.sendMessage(message, embed, author, avatar)
+                            .exceptionally(ExceptionLogger.get())
+                            .join();
+                });
+    }
+    
+    static void connectToDiscord() {
+        disconnectFromDiscord();
         
         var token = WumpusLink.getConfig().get("discord-bot-token");
         discordApi = new DiscordApiBuilder()
@@ -42,29 +82,15 @@ public class MessageProxy {
         var channelId = WumpusLink.getConfig().get("discord-channel-id");
         var channel = discordApi.getServerTextChannelById(channelId).orElseThrow();
         
-        channel.addMessageCreateListener(MessageProxy::proxyMessageToMinecraft);
+        channel.addMessageCreateListener(MessageProxy::sendMessageToMinecraft);
     }
     
-    public static void proxyMessageToDiscord(String message, String senderName, UUID senderUuid) {
-        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
-        URL avatarUrl;
-        
-        if (senderUuid == null || senderUuid == Util.NIL_UUID)
-            avatarUrl = DEFAULT_AVATAR_URL;
-        else
-            avatarUrl = createUrl("https://crafatar.com/renders/head/" + senderUuid + "?default=MHF_Steve&overlay");
-        
-        discordApi.getIncomingWebhookByUrl(webhookUrl).thenAcceptAsync(webhook -> {
-            webhook.sendMessage(message, senderName, avatarUrl).join();
-        }).exceptionally(ExceptionLogger.get());
-        
+    static void disconnectFromDiscord() {
+        if (discordApi != null)
+            discordApi.disconnect().join();
     }
     
-    public static void proxyMessageToDiscord(Text message, String senderName, UUID senderUuid) {
-        proxyMessageToDiscord(message.getString(), senderName, senderUuid);
-    }
-    
-    private static void proxyMessageToMinecraft(MessageCreateEvent event) {
+    private static void sendMessageToMinecraft(MessageCreateEvent event) {
         var author = event.getMessage().getAuthor();
         if (author.isBotUser() || author.isWebhook()) return;
         
@@ -97,13 +123,5 @@ public class MessageProxy {
                 .append(TextParser.parse(event.getReadableMessageContent())); // TODO: limit parsing to only markdown
         
         minecraftServer.getPlayerManager().broadcast(messageText, MessageType.CHAT, Util.NIL_UUID);
-    }
-    
-    static URL createUrl(String string) {
-        try {
-            return new URL(string); // Checked exceptions are for clowns.
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
     }
 }

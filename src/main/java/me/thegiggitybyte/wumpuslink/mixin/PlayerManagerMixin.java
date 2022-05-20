@@ -1,32 +1,40 @@
 package me.thegiggitybyte.wumpuslink.mixin;
 
 import me.thegiggitybyte.wumpuslink.MessageProxy;
-import net.minecraft.network.MessageType;
+import me.thegiggitybyte.wumpuslink.WumpusLink;
+import net.minecraft.network.ClientConnection;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Util;
-import org.spongepowered.asm.mixin.Final;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Map;
-import java.util.UUID;
+import java.awt.*;
 
 @Mixin(PlayerManager.class)
 public class PlayerManagerMixin {
-    @Shadow @Final private Map<UUID, ServerPlayerEntity> playerMap;
     
-    @Inject(method = "broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V", at = @At("TAIL"))
-    public void discordSystemMessageProxy(Text message, MessageType type, UUID senderUuid, CallbackInfo ci) {
-        String name = "";
+    @Inject(
+            method = "onPlayerConnect",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"
+            )
+    )
+    public void playerConnectMessageProxy(ClientConnection connection, ServerPlayerEntity player, CallbackInfo ci) {
+        var canRelayJoinMessage = WumpusLink.getConfig().getOrDefault("minecraft-join-leave-messages", true);
         
-        if (senderUuid != null && senderUuid != Util.NIL_UUID && playerMap.containsKey(senderUuid))
-            name = playerMap.get(senderUuid).getEntityName();
-        
-        MessageProxy.proxyMessageToDiscord(message, name.isEmpty() ? "Server" : name, senderUuid);
+        if (canRelayJoinMessage) {
+            var thumbnail = WumpusLink.getMinecraftPlayerBody(player.getUuid());
+            var embed = new EmbedBuilder()
+                    .setTitle("Player Joined")
+                    .setDescription(player.getEntityName())
+                    .setThumbnail(thumbnail)
+                    .setColor(Color.GREEN);
+            
+            MessageProxy.sendMessageToDiscord(embed);
+        }
     }
 }

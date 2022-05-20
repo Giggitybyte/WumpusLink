@@ -6,6 +6,8 @@
 
   "server": [
     "PlayerManagerMixin",
+    "PlayerAdvancementTrackerMixin",
+    "ServerPlayerEntityMixin",
     "ServerPlayNetworkHandlerMixin"
   ],
   
