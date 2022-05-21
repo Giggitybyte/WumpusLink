@@ -9,7 +9,10 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.message.Message;
+import org.javacord.api.entity.message.WebhookMessageBuilder;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.message.mention.AllowedMentionsBuilder;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.util.logging.ExceptionLogger;
 
@@ -28,46 +31,53 @@ public class MessageProxy {
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> connectToDiscord());
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, String message) {
+    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, String message) {
         return sendMessageToDiscord(authorName, avatarUrl, message, null);
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, EmbedBuilder embed) {
+    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, EmbedBuilder embed) {
         return sendMessageToDiscord(authorName, avatarUrl, null, embed);
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, Text messageText) {
+    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, Text messageText) {
         return sendMessageToDiscord(authorName, avatarUrl, messageText.getString());
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(String message) {
+    public static CompletableFuture<Message> sendMessageToDiscord(String message) {
         return sendMessageToDiscord(null, null, message);
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(EmbedBuilder embed) {
+    public static CompletableFuture<Message> sendMessageToDiscord(EmbedBuilder embed) {
         return sendMessageToDiscord(null, null, embed);
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(Text messageText) {
+    public static CompletableFuture<Message> sendMessageToDiscord(Text messageText) {
         return sendMessageToDiscord(null, null, messageText);
     }
     
-    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, String message, EmbedBuilder embed) {
+    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, String message, EmbedBuilder embed) {
         if ((message == null || message.isBlank()) && embed == null)
             throw new RuntimeException("message and embed cannot both be empty");
         
         String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
     
-        return discordApi.getIncomingWebhookByUrl(webhookUrl)
-                .exceptionally(ExceptionLogger.get())
-                .thenAcceptAsync(webhook -> {
-                    var author = (authorName == null || authorName.isBlank()) ? "Minecraft" : authorName;
-                    var avatar = avatarUrl == null ? DEFAULT_AVATAR_URL : avatarUrl;
-                    
-                    webhook.sendMessage(message, embed, author, avatar)
-                            .exceptionally(ExceptionLogger.get())
-                            .join();
-                });
+        var author = (authorName == null || authorName.isBlank()) ? "Minecraft" : authorName;
+        var avatar = avatarUrl == null ? DEFAULT_AVATAR_URL : avatarUrl;
+    
+        var allowedMentions = new AllowedMentionsBuilder()
+                .setMentionEveryoneAndHere(false)
+                .setMentionRoles(false)
+                .setMentionUsers(false)
+                .build();
+    
+        return new WebhookMessageBuilder()
+                .setAllowedMentions(allowedMentions)
+                .setContent(message)
+                .addEmbed(embed)
+                .setDisplayName(author)
+                .setDisplayAvatar(avatar)
+                .send(discordApi, webhookUrl)
+                .exceptionally(ExceptionLogger.get());
     }
     
     static void connectToDiscord() {
@@ -81,6 +91,8 @@ public class MessageProxy {
         
         var channelId = WumpusLink.getConfig().get("discord-channel-id");
         var channel = discordApi.getServerTextChannelById(channelId).orElseThrow();
+        
+        
         
         channel.addMessageCreateListener(MessageProxy::sendMessageToMinecraft);
     }
