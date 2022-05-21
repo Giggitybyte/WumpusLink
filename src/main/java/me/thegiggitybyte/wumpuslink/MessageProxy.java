@@ -59,10 +59,15 @@ public class MessageProxy {
         if ((message == null || message.isBlank()) && embed == null)
             throw new RuntimeException("message and embed cannot both be empty");
         
-        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
-    
-        var author = (authorName == null || authorName.isBlank()) ? "Minecraft" : authorName;
-        var avatar = avatarUrl == null ? DEFAULT_AVATAR_URL : avatarUrl;
+        var webhookMessage = new WebhookMessageBuilder()
+                .setDisplayName((authorName == null || authorName.isBlank()) ? "Minecraft" : authorName)
+                .setDisplayAvatar(avatarUrl == null ? DEFAULT_AVATAR_URL : avatarUrl);
+        
+        if (message != null && !message.isBlank())
+            webhookMessage.setContent(message);
+        
+        if (embed != null)
+            webhookMessage.addEmbed(embed);
     
         var allowedMentions = new AllowedMentionsBuilder()
                 .setMentionEveryoneAndHere(false)
@@ -70,13 +75,10 @@ public class MessageProxy {
                 .setMentionUsers(false)
                 .build();
     
-        return new WebhookMessageBuilder()
-                .setAllowedMentions(allowedMentions)
-                .setContent(message)
-                .addEmbed(embed)
-                .setDisplayName(author)
-                .setDisplayAvatar(avatar)
-                .send(discordApi, webhookUrl)
+        webhookMessage.setAllowedMentions(allowedMentions);
+    
+        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
+        return webhookMessage.send(discordApi, webhookUrl)
                 .exceptionally(ExceptionLogger.get());
     }
     
