@@ -158,9 +158,9 @@ public class WumpusLink implements DedicatedServerModInitializer {
                 .request();
         
         for (var key : REQUIRED_CONFIG_KEYS) {
-            if (config.get(key) == null)
+            if (config.getOrDefault(key, null) == null)
                 throw new ConfigurationFieldMissingError(key);
-            else if (config.get(key).trim().length() == 0)
+            else if (config.getOrDefault(key, null).trim().length() == 0)
                 throw new ConfigurationValueEmptyError(key);
         }
     }

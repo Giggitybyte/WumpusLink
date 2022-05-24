@@ -77,7 +77,7 @@ public class MessageProxy {
     
         webhookMessage.setAllowedMentions(allowedMentions);
     
-        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
+        String webhookUrl = WumpusLink.getConfig().getOrDefault("discord-webhook-url", "");
         return webhookMessage.send(discordApi, webhookUrl)
                 .exceptionally(ExceptionLogger.get());
     }
@@ -85,13 +85,13 @@ public class MessageProxy {
     static void connectToDiscord() {
         disconnectFromDiscord();
         
-        var token = WumpusLink.getConfig().get("discord-bot-token");
+        var token = WumpusLink.getConfig().getOrDefault("discord-bot-token", "");
         discordApi = new DiscordApiBuilder()
                 .setToken(token)
                 .login()
                 .join();
         
-        var channelId = WumpusLink.getConfig().get("discord-channel-id");
+        var channelId = WumpusLink.getConfig().getOrDefault("discord-channel-id", "");
         var channel = discordApi.getServerTextChannelById(channelId).orElseThrow();
         
         
