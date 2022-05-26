@@ -5,6 +5,7 @@
   "package": "me.thegiggitybyte.wumpuslink.mixin",
 
   "server": [
+    "DamageTrackerAccessor",
     "PlayerManagerMixin",
     "PlayerAdvancementTrackerMixin",
     "ServerPlayerEntityMixin",

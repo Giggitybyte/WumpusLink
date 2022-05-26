@@ -22,26 +22,21 @@ public class ServerPlayNetworkHandlerMixin {
     @Inject(method = "handleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/filter/TextStream$Message;getFiltered()Ljava/lang/String;"))
     public void playerChatMessageProxy(TextStream.Message message, CallbackInfo ci) {
         boolean canRelayChatMessages = WumpusLink.getConfig().getOrDefault("minecraft-chat-messages", true);
-        if (canRelayChatMessages) {
-            var avatarUrl = WumpusLink.getMinecraftPlayerHeadUrl(this.player.getUuid());
-            MessageProxy.sendMessageToDiscord(this.player.getEntityName(), avatarUrl, message.getRaw());
-        }
+        if (canRelayChatMessages == false) return;
+        
+        MessageProxy.sendPlayerMessageToDiscord(this.player, message.getRaw());
     }
     
     @Inject(method = "onDisconnected", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"))
     public void playerDisconnectMessageProxy(Text reason, CallbackInfo ci) {
         var canRelayDisconnectMessages = WumpusLink.getConfig().getOrDefault("minecraft-join-leave-messages", true);
-        if (canRelayDisconnectMessages) {
+        if (canRelayDisconnectMessages == false) return;
     
-            var thumbnail = "https://crafatar.com/renders/body/" + player.getUuid();
-            var embed = new EmbedBuilder()
-                    .setTitle("Player Left")
-                    .setDescription(player.getEntityName())
-                    .setThumbnail(thumbnail)
-                    .setFooter(reason.getString())
-                    .setColor(Color.RED);
+        var embed = new EmbedBuilder()
+                .setTitle("Left the game")
+                .setDescription("```java\n" + reason.getString() + "\n```")
+                .setColor(Color.RED);
     
-            MessageProxy.sendMessageToDiscord(embed);
-        }
+        MessageProxy.sendPlayerMessageToDiscord(this.player, embed);
     }
 }

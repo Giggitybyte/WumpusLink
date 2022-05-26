@@ -2,8 +2,10 @@ package me.thegiggitybyte.wumpuslink;
 
 import eu.pb4.placeholders.TextParser;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
@@ -31,31 +33,7 @@ public class MessageProxy {
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, resourceManager, success) -> connectToDiscord());
     }
     
-    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, String message) {
-        return sendMessageToDiscord(authorName, avatarUrl, message, null);
-    }
-    
-    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, EmbedBuilder embed) {
-        return sendMessageToDiscord(authorName, avatarUrl, null, embed);
-    }
-    
-    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, Text messageText) {
-        return sendMessageToDiscord(authorName, avatarUrl, messageText.getString());
-    }
-    
-    public static CompletableFuture<Message> sendMessageToDiscord(String message) {
-        return sendMessageToDiscord(null, null, message);
-    }
-    
-    public static CompletableFuture<Message> sendMessageToDiscord(EmbedBuilder embed) {
-        return sendMessageToDiscord(null, null, embed);
-    }
-    
-    public static CompletableFuture<Message> sendMessageToDiscord(Text messageText) {
-        return sendMessageToDiscord(null, null, messageText);
-    }
-    
-    public static CompletableFuture<Message> sendMessageToDiscord(String authorName, URL avatarUrl, String message, EmbedBuilder embed) {
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, String message, EmbedBuilder embed) {
         if ((message == null || message.isBlank()) && embed == null)
             throw new RuntimeException("message and embed cannot both be empty");
         
@@ -68,18 +46,65 @@ public class MessageProxy {
         
         if (embed != null)
             webhookMessage.addEmbed(embed);
-    
+        
         var allowedMentions = new AllowedMentionsBuilder()
                 .setMentionEveryoneAndHere(false)
                 .setMentionRoles(false)
                 .setMentionUsers(false)
                 .build();
-    
+        
         webhookMessage.setAllowedMentions(allowedMentions);
-    
+        
         String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
-        return webhookMessage.send(discordApi, webhookUrl)
+        return webhookMessage.sendSilently(discordApi, webhookUrl)
                 .exceptionally(ExceptionLogger.get());
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, String message) {
+        return sendMessageToDiscord(authorName, avatarUrl, message, null);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, EmbedBuilder embed) {
+        return sendMessageToDiscord(authorName, avatarUrl, null, embed);
+    }
+    
+    public static CompletableFuture<Void> sendMessageToDiscord(String authorName, URL avatarUrl, Text messageText) {
+        return sendMessageToDiscord(authorName, avatarUrl, messageText.getString());
+    }
+    
+    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, String message)
+    {
+        return sendMessageToDiscord(
+                author.getDisplayName().getString(),
+                WumpusLink.getMinecraftPlayerHeadUrl(author.getUuid()),
+                message
+        );
+    }
+    
+    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, EmbedBuilder embed)
+    {
+        return sendMessageToDiscord(
+                author.getDisplayName().getString(),
+                WumpusLink.getMinecraftPlayerHeadUrl(author.getUuid()),
+                embed
+        );
+    }
+    
+    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, Text messageText)
+    {
+        return sendPlayerMessageToDiscord(author, messageText.getString());
+    }
+    
+    public static CompletableFuture<Void> sendServerMessageToDiscord(String message) {
+        return sendMessageToDiscord(null, null, message);
+    }
+    
+    public static CompletableFuture<Void> sendServerMessageToDiscord(EmbedBuilder embed) {
+        return sendMessageToDiscord(null, null, embed);
+    }
+    
+    public static CompletableFuture<Void> sendServerMessageToDiscord(Text messageText) {
+        return sendMessageToDiscord(null, null, messageText);
     }
     
     static void connectToDiscord() {
@@ -93,8 +118,6 @@ public class MessageProxy {
         
         var channelId = WumpusLink.getConfig().get("discord-channel-id");
         var channel = discordApi.getServerTextChannelById(channelId).orElseThrow();
-        
-        
         
         channel.addMessageCreateListener(MessageProxy::sendMessageToMinecraft);
     }

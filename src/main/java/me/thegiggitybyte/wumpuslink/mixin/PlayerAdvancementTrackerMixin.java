@@ -33,9 +33,9 @@ public class PlayerAdvancementTrackerMixin {
         var advancementFrame = advancementDisplay.getFrame();
         
         switch (advancementFrame.getId()) {
-            case "task" -> embed.setTitle(this.owner.getEntityName() + " made an advancement");
-            case "challenge" -> embed.setTitle(this.owner.getEntityName() + " completed a challenge");
-            case "goal" -> embed.setTitle(this.owner.getEntityName() + " has reached a goal");
+            case "task" -> embed.setTitle("Advancement Made!");
+            case "challenge" -> embed.setTitle("Challenge Complete!");
+            case "goal" -> embed.setTitle("Goal Reached!");
         }
         
         embed.addField(
@@ -43,16 +43,13 @@ public class PlayerAdvancementTrackerMixin {
                 advancementDisplay.getDescription().getString()
         );
         
-        var thumbnailUrl = WumpusLink.getMinecraftPlayerBody(owner.getUuid());
-        embed.setThumbnail(thumbnailUrl);
-        
         var rgbInteger = advancementFrame.getTitleFormat().getColorValue();
         var advancementColor = new Color(rgbInteger);
         embed.setColor(advancementColor);
         
         // TODO: add advancement icon as embed image
         
-        MessageProxy.sendMessageToDiscord(embed);
+        MessageProxy.sendPlayerMessageToDiscord(owner, embed);
     }
     
 }

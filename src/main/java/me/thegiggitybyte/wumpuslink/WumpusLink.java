@@ -39,7 +39,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                         .setDescription("Loading worlds...")
                         .setColor(Color.ORANGE);
     
-                MessageProxy.sendMessageToDiscord(embed);
+                MessageProxy.sendServerMessageToDiscord(embed);
             }
         });
     
@@ -63,7 +63,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                         .setFooter(modCount + " mods loaded")
                         .setColor(Color.GREEN);
     
-                MessageProxy.sendMessageToDiscord(embed);
+                MessageProxy.sendServerMessageToDiscord(embed);
             }
         });
     
@@ -75,7 +75,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                         .setDescription("Unloading players and worlds...")
                         .setColor(Color.ORANGE);
             
-                MessageProxy.sendMessageToDiscord(embed);
+                MessageProxy.sendServerMessageToDiscord(embed);
             }
         });
     
@@ -86,7 +86,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                         .setTitle("Server Offline")
                         .setColor(Color.RED);
     
-                MessageProxy.sendMessageToDiscord(embed).join();
+                MessageProxy.sendServerMessageToDiscord(embed).join();
             }
         
             MessageProxy.disconnectFromDiscord();
@@ -139,7 +139,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         return createUrl("https://crafatar.com/renders/head/" + playerUuid + "?default=mhf_Steve&overlay");
     }
     
-    public static String getMinecraftPlayerBody(UUID playerUuid) {
+    public static String getMinecraftPlayerRender(UUID playerUuid) {
         return "https://crafatar.com/renders/body/" + playerUuid;
     }
     
