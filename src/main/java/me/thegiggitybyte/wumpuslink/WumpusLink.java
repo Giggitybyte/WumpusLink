@@ -22,7 +22,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
     private static final String[] REQUIRED_CONFIG_KEYS;
     private static SimpleConfig config;
     
-    static {
+    static { // Our initialization needs to be completed before the Fabric loader starts its own initialization process.
         REQUIRED_CONFIG_KEYS = new String[]{
                 "discord-bot-token",
                 "discord-channel-id",
@@ -31,9 +31,10 @@ public class WumpusLink implements DedicatedServerModInitializer {
     
         WumpusLink.initialize();
         
+        boolean canSendStatusMessages = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
+        
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            var canSendStartingMessage = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
-            if (canSendStartingMessage) {
+            if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Starting")
                         .setDescription("Loading worlds...")
@@ -44,8 +45,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
     
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            var canSendOnlineMessage = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
-            if (canSendOnlineMessage) {
+            if (canSendStatusMessages) {
                 var modCount = FabricLoader.getInstance().getAllMods().stream()
                         .filter(mod -> {
                             var modId = mod.getMetadata().getId();
@@ -54,7 +54,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                             !modId.equals("minecraft") &&
                             !modId.equals("fabricloader");
                         })
-                        .filter(mod -> mod.getContainingMod().isEmpty()) // Top level
+                        .filter(mod -> mod.getContainingMod().isEmpty()) // Exclude nested mods (JiJ)
                         .count(); // TODO: filter out library mods
                 
                 var embed = new EmbedBuilder()
@@ -68,8 +68,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
     
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            var canSendStoppingMessage = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
-            if (canSendStoppingMessage) {
+            if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Stopping")
                         .setDescription("Unloading players and worlds...")
@@ -80,8 +79,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
     
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            var canSendOfflineMessage = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
-            if (canSendOfflineMessage) {
+            if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Offline")
                         .setColor(Color.RED);
