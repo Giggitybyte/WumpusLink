@@ -1,17 +1,18 @@
 package me.thegiggitybyte.wumpuslink;
 
-import eu.pb4.placeholders.TextParser;
+import eu.pb4.placeholders.api.PlaceholderContext;
+import eu.pb4.placeholders.api.Placeholders;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.MessageType;
+import net.minecraft.network.message.MessageType;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.*;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
-import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.WebhookMessageBuilder;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder;
@@ -72,8 +73,7 @@ public class MessageProxy {
         return sendMessageToDiscord(authorName, avatarUrl, messageText.getString());
     }
     
-    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, String message)
-    {
+    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, String message) {
         return sendMessageToDiscord(
                 author.getDisplayName().getString(),
                 WumpusLink.getMinecraftPlayerHeadUrl(author.getUuid()),
@@ -81,8 +81,7 @@ public class MessageProxy {
         );
     }
     
-    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, EmbedBuilder embed)
-    {
+    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, EmbedBuilder embed) {
         return sendMessageToDiscord(
                 author.getDisplayName().getString(),
                 WumpusLink.getMinecraftPlayerHeadUrl(author.getUuid()),
@@ -90,8 +89,7 @@ public class MessageProxy {
         );
     }
     
-    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, Text messageText)
-    {
+    public static CompletableFuture<Void> sendPlayerMessageToDiscord(PlayerEntity author, Text messageText) {
         return sendPlayerMessageToDiscord(author, messageText.getString());
     }
     
@@ -132,7 +130,7 @@ public class MessageProxy {
         if (author.isBotUser() || author.isWebhook()) return;
         
         var userInfo = author.getDiscriminatedName() + " (" + author.getIdAsString() + ")";
-        var userInfoText = new LiteralText(userInfo).setStyle(Style.EMPTY.withItalic(true));
+        var userInfoText = Text.literal(userInfo).setStyle(Style.EMPTY.withItalic(true));
         var userHoverEvent = HoverEvent.Action.SHOW_TEXT.buildHoverEvent(userInfoText);
         var userStyle = Style.EMPTY.withHoverEvent(userHoverEvent);
         
@@ -140,25 +138,27 @@ public class MessageProxy {
             userInfoText.setStyle(Style.EMPTY.withColor(color.getRGB()));
         });
         
-        MutableText replyText = new LiteralText("");
+        MutableText replyText = Text.literal("");
         var optionalMessageReference = event.getMessage().getMessageReference();
         if (optionalMessageReference.isPresent() && optionalMessageReference.get().getMessage().isPresent()) {
             var replyMessage = optionalMessageReference.get().getMessage().get();
             var replyAuthor = replyMessage.getAuthor();
             var replyInfoText = replyAuthor.getDiscriminatedName() + " (" + replyAuthor.getIdAsString() + ")\n\n" + replyMessage.getReadableContent();
-            var replyHoverEvent = HoverEvent.Action.SHOW_TEXT.buildHoverEvent(new LiteralText(replyInfoText));
+            var replyHoverEvent = HoverEvent.Action.SHOW_TEXT.buildHoverEvent(Text.literal(replyInfoText));
             var replyStyle = Style.EMPTY.withHoverEvent(replyHoverEvent).withColor(Formatting.AQUA);
-            replyText = new LiteralText("[↩] ").setStyle(replyStyle); // hope that emoji works
+            replyText = Text.literal("[↩] ").setStyle(replyStyle); // hope that emoji works
         }
         
-        var senderText = new LiteralText(author.getDisplayName()).setStyle(userStyle);
+        var senderText = Text.literal(author.getDisplayName()).setStyle(userStyle);
+        var originalText = Text.literal(event.getReadableMessageContent());
+        var parsedText = Placeholders.parseText(originalText, PlaceholderContext.of(minecraftServer)); // TODO: limit parsing to only markdown
         
-        var messageText = new LiteralText("")
+        var messageText = Text.literal("")
                 .append(replyText)
                 .append(senderText)
                 .append(" » ")
-                .append(TextParser.parse(event.getReadableMessageContent())); // TODO: limit parsing to only markdown
+                .append(parsedText);
         
-        minecraftServer.getPlayerManager().broadcast(messageText, MessageType.CHAT, Util.NIL_UUID);
+        minecraftServer.getPlayerManager().broadcast(messageText, MessageType.SYSTEM);
     }
 }

@@ -6,12 +6,14 @@ import me.thegiggitybyte.wumpuslink.WumpusLink;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.encryption.PlayerPublicKey;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.stat.ServerStatHandler;
 import net.minecraft.stat.Stats;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,15 +26,15 @@ import java.awt.*;
 public abstract class ServerPlayerEntityMixin extends PlayerEntity {
     @Shadow public abstract ServerStatHandler getStatHandler();
     
-    public ServerPlayerEntityMixin(World world, BlockPos pos, float yaw, GameProfile profile) {
-        super(world, pos, yaw, profile);
+    public ServerPlayerEntityMixin(World world, BlockPos pos, float yaw, GameProfile gameProfile, @Nullable PlayerPublicKey publicKey) {
+        super(world, pos, yaw, gameProfile, publicKey);
     }
     
     @Inject(
             method = "onDeath",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"
+                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/util/registry/RegistryKey;)V"
             )
     )
     public void playerDeathMessageProxy(DamageSource source, CallbackInfo ci) {
@@ -90,7 +92,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
         }
     
         if (responsibleEntity != null)
-            embed.setDescription("while fighting " + responsibleEntity.getDisplayName().asString() + "*");
+            embed.setDescription("while fighting " + responsibleEntity.getDisplayName().getString() + "*");
         
         var deathCount = this.getStatHandler().getStat(Stats.CUSTOM, Stats.DEATHS) + 1;
         embed.setFooter(deathCount + (deathCount == 1 ? " death" : " deaths"));

@@ -1,22 +1,24 @@
 package me.thegiggitybyte.wumpuslink;
 
+import com.mojang.brigadier.CommandDispatcher;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import me.thegiggitybyte.wumpuslink.error.ConfigurationFieldMissingError;
 import me.thegiggitybyte.wumpuslink.error.ConfigurationValueEmptyError;
 import net.darktree.simpleconfig.SimpleConfig;
 import net.fabricmc.api.DedicatedServerModInitializer;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.text.LiteralText;
+import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.net.URL;
 import java.util.UUID;
-
-import static net.minecraft.server.command.CommandManager.literal;
 
 public class WumpusLink implements DedicatedServerModInitializer {
     private static final String[] REQUIRED_CONFIG_KEYS;
@@ -28,7 +30,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                 "discord-channel-id",
                 "discord-webhook-url"
         };
-    
+        
         WumpusLink.initialize();
         
         boolean canSendStatusMessages = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
@@ -39,11 +41,11 @@ public class WumpusLink implements DedicatedServerModInitializer {
                         .setTitle("Server Starting")
                         .setDescription("Loading worlds...")
                         .setColor(Color.ORANGE);
-    
+                
                 MessageProxy.sendServerMessageToDiscord(embed);
             }
         });
-    
+        
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             if (canSendStatusMessages) {
                 var modCount = FabricLoader.getInstance().getAllMods().stream()
@@ -51,8 +53,8 @@ public class WumpusLink implements DedicatedServerModInitializer {
                             var modId = mod.getMetadata().getId();
                             
                             return !modId.equals("java") &&
-                            !modId.equals("minecraft") &&
-                            !modId.equals("fabricloader");
+                                   !modId.equals("minecraft") &&
+                                   !modId.equals("fabricloader");
                         })
                         .filter(mod -> mod.getContainingMod().isEmpty()) // Exclude nested mods (JiJ)
                         .count(); // TODO: filter out library mods
@@ -62,31 +64,31 @@ public class WumpusLink implements DedicatedServerModInitializer {
                         .setDescription("Ready for players")
                         .setFooter(modCount + " mods loaded")
                         .setColor(Color.GREEN);
-    
+                
                 MessageProxy.sendServerMessageToDiscord(embed);
             }
         });
-    
+        
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Stopping")
                         .setDescription("Unloading players and worlds...")
                         .setColor(Color.ORANGE);
-            
+                
                 MessageProxy.sendServerMessageToDiscord(embed);
             }
         });
-    
+        
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Offline")
                         .setColor(Color.RED);
-    
+                
                 MessageProxy.sendServerMessageToDiscord(embed).join();
             }
-        
+            
             MessageProxy.disconnectFromDiscord();
         });
         
@@ -95,35 +97,35 @@ public class WumpusLink implements DedicatedServerModInitializer {
     
     @Override
     public void onInitializeServer() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
-            var configCommand = literal("config")
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            var configCommand = CommandManager.literal("config")
                     .requires(Permissions.require("wumpuslink.reload.config", 4))
                     .executes(ctx -> {
                         initializeConfig();
-                        ctx.getSource().sendFeedback(new LiteralText("WumpusLink configuration reload complete"), false);
+                        ctx.getSource().sendFeedback(Text.literal("WumpusLink configuration reload complete"), false);
                         return 1;
                     });
             
-            var discordCommand = literal("discord")
+            var discordCommand = CommandManager.literal("discord")
                     .requires(Permissions.require("wumpuslink.reload.discord", 4))
                     .executes(ctx -> {
                         MessageProxy.connectToDiscord();
-                        ctx.getSource().sendFeedback(new LiteralText("Discord client reload complete"), false);
+                        ctx.getSource().sendFeedback(Text.literal(("Discord client reload complete")), false);
                         return 1;
                     });
             
-            var reloadCommand = literal("reload")
+            var reloadCommand = CommandManager.literal("reload")
                     .requires(Permissions.require("wumpuslink.reload", 4)) // otherwise OP
                     .executes(ctx -> {
                         WumpusLink.initialize();
-                        ctx.getSource().sendFeedback(new LiteralText("WumpusLink reload complete"), false);
+                        ctx.getSource().sendFeedback(Text.literal(("WumpusLink reload complete")), false);
                         return 1;
                     })
                     .then(configCommand)
                     .then(discordCommand)
                     .build();
             
-            var wumpusLinkCommand = literal("wumpuslink")
+            var wumpusLinkCommand = CommandManager.literal("wumpuslink")
                     .then(reloadCommand)
                     .build();
             

@@ -22,7 +22,7 @@ public class PlayerAdvancementTrackerMixin {
             method = "grantCriterion",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V")
+                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/util/registry/RegistryKey;)V")
     )
     public void playerAdvancementMessageProxy(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         boolean canRelayAdvancements = WumpusLink.getConfig().getOrDefault("minecraft-advancement-messages", true);
