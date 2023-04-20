@@ -3,7 +3,6 @@
   "minVersion": "0.8",
   "compatibilityLevel": "JAVA_17",
   "package": "me.thegiggitybyte.wumpuslink.mixin",
-
   "server": [
     "DamageTrackerAccessor",
     "PlayerManagerMixin",

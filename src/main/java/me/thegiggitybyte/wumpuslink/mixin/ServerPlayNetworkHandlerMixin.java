@@ -2,9 +2,7 @@ package me.thegiggitybyte.wumpuslink.mixin;
 
 import me.thegiggitybyte.wumpuslink.MessageProxy;
 import me.thegiggitybyte.wumpuslink.WumpusLink;
-import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
-import net.minecraft.server.filter.FilteredMessage;
-import net.minecraft.server.filter.TextStream;
+import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -19,26 +17,27 @@ import java.awt.*;
 
 @Mixin(ServerPlayNetworkHandler.class)
 public class ServerPlayNetworkHandlerMixin {
-    @Shadow public ServerPlayerEntity player;
-    
-    @Inject(method = "handleMessage", at = @At(value = "HEAD"))
-    public void playerChatMessageProxy(ChatMessageC2SPacket packet, FilteredMessage<String> message, CallbackInfo ci) {
+    @Shadow
+    public ServerPlayerEntity player;
+
+    @Inject(method = "handleDecoratedMessage", at = @At(value = "HEAD"))
+    public void playerChatMessageProxy(SignedMessage message, CallbackInfo ci) {
         boolean canRelayChatMessages = WumpusLink.getConfig().getOrDefault("minecraft-chat-messages", true);
-        if (canRelayChatMessages == false) return;
-        
-        MessageProxy.sendPlayerMessageToDiscord(this.player, message.raw());
+        if (!canRelayChatMessages) return;
+
+        MessageProxy.sendPlayerMessageToDiscord(this.player, message.getContent());
     }
-    
-    @Inject(method = "onDisconnected", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/util/registry/RegistryKey;)V"))
+
+    @Inject(method = "onDisconnected", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Z)V"))
     public void playerDisconnectMessageProxy(Text reason, CallbackInfo ci) {
         var canRelayDisconnectMessages = WumpusLink.getConfig().getOrDefault("minecraft-join-leave-messages", true);
-        if (canRelayDisconnectMessages == false) return;
-    
+        if (!canRelayDisconnectMessages) return;
+
         var embed = new EmbedBuilder()
                 .setTitle("Left the game")
                 .setDescription("```java\n" + reason.getString() + "\n```")
                 .setColor(Color.RED);
-    
+
         MessageProxy.sendPlayerMessageToDiscord(this.player, embed);
     }
 }
