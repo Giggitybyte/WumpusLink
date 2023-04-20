@@ -39,17 +39,19 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
     public void playerDeathMessageProxy(DamageSource source, CallbackInfo ci) {
         var canRelayDeathMessage = WumpusLink.getConfig().getOrDefault("minecraft-player-death-messages", true);
         if (!canRelayDeathMessage) return;
-
+        
+        var damageSources = this.world.getDamageSources();
         var recentDamage = this.getDamageTracker().getMostRecentDamage();
-        var damageSource = recentDamage.getDamageSource().getSource().getDamageSources();
+        var damageSource = recentDamage == null ? damageSources.generic() : recentDamage.getDamageSource();
+        
         var embed = new EmbedBuilder();
         Entity responsibleEntity = null;
 
-        if ((recentDamage == null) || recentDamage.getDamageSource() == damageSource.generic()) {
+        if ((recentDamage == null) || damageSource == damageSources.generic()) {
             embed.setTitle("Spontaneous death");
-        } else if (recentDamage.getDamageSource() == recentDamage.getDamageSource()) {
+        } else if (damageSource == damageSources.fall()) {
             var furthestFallDamage = ((DamageTrackerAccessor) this.getDamageTracker()).getFurthestFall();
-            if (furthestFallDamage.getDamageSource() != damageSource.fall() && furthestFallDamage.getDamageSource() != damageSource.outOfWorld()) {
+            if (furthestFallDamage.getDamageSource() != damageSources.fall() && furthestFallDamage.getDamageSource() != damageSources.outOfWorld()) {
                 if (recentDamage.getAttacker() != null && furthestFallDamage.getAttacker() != null) {
                     var recentAttackerUuid = recentDamage.getAttacker().getUuid();
                     var fallDamageAttackerUuid = furthestFallDamage.getAttacker().getUuid();
@@ -61,7 +63,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
 
             embed.setTitle("Fell from " + recentDamage.getFallDistance() + "m");
         } else {
-            var embedTitle = switch (recentDamage.getDamageSource().getName()) {
+            var embedTitle = switch (damageSource.getName()) {
                 case "drown" -> "Drowned";
                 case "starve" -> "Starved";
                 case "inWall" -> "Suffocated";
