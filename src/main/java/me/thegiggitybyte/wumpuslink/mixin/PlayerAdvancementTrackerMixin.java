@@ -16,40 +16,41 @@ import java.awt.*;
 
 @Mixin(PlayerAdvancementTracker.class)
 public class PlayerAdvancementTrackerMixin {
-    @Shadow private ServerPlayerEntity owner;
-    
+    @Shadow
+    private ServerPlayerEntity owner;
+
     @Inject(
             method = "grantCriterion",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Lnet/minecraft/util/registry/RegistryKey;)V")
+                    target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Z)V")
     )
     public void playerAdvancementMessageProxy(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         boolean canRelayAdvancements = WumpusLink.getConfig().getOrDefault("minecraft-advancement-messages", true);
-        if (canRelayAdvancements == false) return;
-        
+        if (!canRelayAdvancements) return;
+
         var embed = new EmbedBuilder();
         var advancementDisplay = advancement.getDisplay();
         var advancementFrame = advancementDisplay.getFrame();
-        
+
         switch (advancementFrame.getId()) {
             case "task" -> embed.setTitle("Advancement Made!");
             case "challenge" -> embed.setTitle("Challenge Complete!");
             case "goal" -> embed.setTitle("Goal Reached!");
         }
-        
+
         embed.addField(
                 advancementDisplay.getTitle().getString(),
                 advancementDisplay.getDescription().getString()
         );
-        
+
         var rgbInteger = advancementFrame.getTitleFormat().getColorValue();
         var advancementColor = new Color(rgbInteger);
         embed.setColor(advancementColor);
-        
+
         // TODO: add advancement icon as embed image
-        
+
         MessageProxy.sendPlayerMessageToDiscord(owner, embed);
     }
-    
+
 }

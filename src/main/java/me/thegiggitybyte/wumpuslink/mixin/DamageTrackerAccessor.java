@@ -12,7 +12,7 @@ import java.util.List;
 public interface DamageTrackerAccessor {
     @Invoker(value = "getBiggestFall")
     DamageRecord getFurthestFall();
-    
+
     @Accessor(value = "recentDamage")
     List<DamageRecord> getDamageRecords();
 }
