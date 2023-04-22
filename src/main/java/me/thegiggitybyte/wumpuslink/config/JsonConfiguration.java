@@ -82,15 +82,6 @@ public class JsonConfiguration {
             throw new AssertionError("Key does not exist");
     }
 
-    public Object getOrDefaultValue(String key, boolean def) {
-        var jsonValue = jsonObject.get(key);
-
-        if (jsonValue != null)
-            return jsonValue.getAsJsonPrimitive();
-        else
-            return def;
-    }
-
     public Set<String> getKeys() {
         return jsonObject.keySet();
     }
