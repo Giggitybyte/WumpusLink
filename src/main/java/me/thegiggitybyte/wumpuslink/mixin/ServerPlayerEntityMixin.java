@@ -2,7 +2,7 @@ package me.thegiggitybyte.wumpuslink.mixin;
 
 import com.mojang.authlib.GameProfile;
 import me.thegiggitybyte.wumpuslink.MessageProxy;
-import me.thegiggitybyte.wumpuslink.WumpusLink;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -37,7 +37,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
             )
     )
     public void playerDeathMessageProxy(DamageSource source, CallbackInfo ci) {
-        var canRelayDeathMessage = WumpusLink.getConfig().getOrDefault("minecraft-player-death-messages", true);
+        var canRelayDeathMessage = JsonConfiguration.getUserInstance().getValue("minecraft-player-death-messages").getAsBoolean();
         if (!canRelayDeathMessage) return;
         
         var damageSources = this.world.getDamageSources();

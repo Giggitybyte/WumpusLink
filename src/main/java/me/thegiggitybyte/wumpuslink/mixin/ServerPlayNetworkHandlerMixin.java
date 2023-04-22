@@ -1,7 +1,7 @@
 package me.thegiggitybyte.wumpuslink.mixin;
 
 import me.thegiggitybyte.wumpuslink.MessageProxy;
-import me.thegiggitybyte.wumpuslink.WumpusLink;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -22,7 +22,7 @@ public class ServerPlayNetworkHandlerMixin {
 
     @Inject(method = "handleDecoratedMessage", at = @At(value = "HEAD"))
     public void playerChatMessageProxy(SignedMessage message, CallbackInfo ci) {
-        boolean canRelayChatMessages = WumpusLink.getConfig().getOrDefault("minecraft-chat-messages", true);
+        boolean canRelayChatMessages = JsonConfiguration.getUserInstance().getValue("minecraft-chat-messages").getAsBoolean();
         if (!canRelayChatMessages) return;
 
         MessageProxy.sendPlayerMessageToDiscord(this.player, message.getContent());
@@ -30,7 +30,7 @@ public class ServerPlayNetworkHandlerMixin {
 
     @Inject(method = "onDisconnected", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Z)V"))
     public void playerDisconnectMessageProxy(Text reason, CallbackInfo ci) {
-        var canRelayDisconnectMessages = WumpusLink.getConfig().getOrDefault("minecraft-join-leave-messages", true);
+        var canRelayDisconnectMessages = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();
         if (!canRelayDisconnectMessages) return;
 
         var embed = new EmbedBuilder()

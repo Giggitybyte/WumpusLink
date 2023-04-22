@@ -1,9 +1,8 @@
 package me.thegiggitybyte.wumpuslink;
 
+import com.google.gson.JsonPrimitive;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import me.thegiggitybyte.wumpuslink.error.ConfigurationFieldMissingError;
-import me.thegiggitybyte.wumpuslink.error.ConfigurationValueEmptyError;
-import net.darktree.simpleconfig.SimpleConfig;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -18,22 +17,14 @@ import java.net.URL;
 import java.util.UUID;
 
 public class WumpusLink implements DedicatedServerModInitializer {
-    private static final String[] REQUIRED_CONFIG_KEYS;
-    private static SimpleConfig config;
 
     static { // Our initialization needs to be completed before the Fabric loader starts its own initialization process.
-        REQUIRED_CONFIG_KEYS = new String[]{
-                "discord-bot-token",
-                "discord-channel-id",
-                "discord-webhook-url"
-        };
-
         WumpusLink.initialize();
 
-        boolean canSendStatusMessages = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
+        JsonPrimitive canSendStatusMessages = JsonConfiguration.getUserInstance().getValue("minecraft-server-status-messages");
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            if (canSendStatusMessages) {
+            if (canSendStatusMessages.getAsString().equals("true")) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Starting")
                         .setDescription("Loading worlds...")
@@ -44,7 +35,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            if (canSendStatusMessages) {
+            if (canSendStatusMessages.getAsString().equals("true")) {
                 var modCount = FabricLoader.getInstance().getAllMods().stream()
                         .filter(mod -> {
                             var modId = mod.getMetadata().getId();
@@ -67,7 +58,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            if (canSendStatusMessages) {
+            if (canSendStatusMessages.getAsString().equals("true")) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Stopping")
                         .setDescription("Unloading players and worlds...")
@@ -78,7 +69,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            if (canSendStatusMessages) {
+            if (canSendStatusMessages.getAsString().equals("true")) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Offline")
                         .setColor(Color.RED);
@@ -89,7 +80,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
             MessageProxy.disconnectFromDiscord();
         });
 
-        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resourceManager) -> initializeConfig());
+        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resourceManager) -> JsonConfiguration.getUserInstance());
     }
 
     @Override
@@ -98,7 +89,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
             var configCommand = CommandManager.literal("config")
                     .requires(Permissions.require("wumpuslink.reload.config", 4))
                     .executes(ctx -> {
-                        initializeConfig();
+                        JsonConfiguration.getUserInstance();
                         ctx.getSource().sendFeedback(Text.literal("WumpusLink configuration reload complete"), false);
                         return 1;
                     });
@@ -140,27 +131,12 @@ public class WumpusLink implements DedicatedServerModInitializer {
         return "https://crafatar.com/renders/body/" + playerUuid;
     }
 
-    public static SimpleConfig getConfig() {
-        return config;
-    }
 
     static void initialize() {
-        WumpusLink.initializeConfig();
+        JsonConfiguration.getUserInstance();
         MessageProxy.connectToDiscord();
     }
 
-    private static void initializeConfig() throws RuntimeException {
-        config = SimpleConfig.of("wumpuslink")
-                .provider(fileName -> getDefaultConfig())
-                .request();
-
-        for (var key : REQUIRED_CONFIG_KEYS) {
-            if (config.get(key) == null)
-                throw new ConfigurationFieldMissingError(key);
-            else if (config.get(key).trim().length() == 0)
-                throw new ConfigurationValueEmptyError(key);
-        }
-    }
 
     private static String getDefaultConfig() {
         return """

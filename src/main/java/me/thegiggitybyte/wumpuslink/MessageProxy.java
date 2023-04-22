@@ -2,6 +2,7 @@ package me.thegiggitybyte.wumpuslink;
 
 import eu.pb4.placeholders.api.PlaceholderContext;
 import eu.pb4.placeholders.api.Placeholders;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -56,7 +57,7 @@ public class MessageProxy {
 
         webhookMessage.setAllowedMentions(allowedMentions);
 
-        String webhookUrl = WumpusLink.getConfig().get("discord-webhook-url");
+        var webhookUrl = JsonConfiguration.getUserInstance().getValue("discord-webhook-url").getAsString();
         return webhookMessage.sendSilently(discordApi, webhookUrl)
                 .exceptionally(ExceptionLogger.get());
     }
@@ -108,14 +109,14 @@ public class MessageProxy {
     static void connectToDiscord() {
         disconnectFromDiscord();
 
-        var token = WumpusLink.getConfig().get("discord-bot-token");
+        var token = JsonConfiguration.getUserInstance().getValue("discord-bot-token").getAsString();
         discordApi = new DiscordApiBuilder()
                 .setToken(token)
                 .addIntents(Intent.MESSAGE_CONTENT)
                 .login()
                 .join();
 
-        var channelId = WumpusLink.getConfig().get("discord-channel-id");
+        var channelId = JsonConfiguration.getUserInstance().getValue("discord-channel-id").getAsString();
         var channel = discordApi.getServerTextChannelById(channelId).orElseThrow();
 
         channel.addMessageCreateListener(MessageProxy::sendMessageToMinecraft);

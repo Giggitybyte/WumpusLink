@@ -2,6 +2,7 @@ package me.thegiggitybyte.wumpuslink.mixin;
 
 import me.thegiggitybyte.wumpuslink.MessageProxy;
 import me.thegiggitybyte.wumpuslink.WumpusLink;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,7 +26,7 @@ public class PlayerManagerMixin {
             )
     )
     public void playerConnectMessageProxy(ClientConnection connection, ServerPlayerEntity player, CallbackInfo ci) {
-        var canRelayJoinMessage = WumpusLink.getConfig().getOrDefault("minecraft-join-leave-messages", true);
+        var canRelayJoinMessage = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();
         if (!canRelayJoinMessage) return;
 
         var playTimeTicks = player.getStatHandler().getStat(Stats.CUSTOM, Stats.PLAY_TIME);
