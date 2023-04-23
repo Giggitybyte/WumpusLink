@@ -28,8 +28,8 @@ public class PlayerAdvancementTrackerMixin {
                     target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Z)V")
     )
     public void playerAdvancementMessageProxy(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
-        JsonPrimitive canRelayAdvancements = JsonConfiguration.getUserInstance().getValue("minecraft-advancement-messages");
-        if (!canRelayAdvancements.getAsBoolean()) return;
+        boolean canRelayAdvancements = JsonConfiguration.getUserInstance().getValue("minecraft-advancement-messages").getAsBoolean();
+        if (!canRelayAdvancements) return;
 
         var embed = new EmbedBuilder();
         var advancementDisplay = advancement.getDisplay();

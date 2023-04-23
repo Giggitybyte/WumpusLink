@@ -37,7 +37,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
             )
     )
     public void playerDeathMessageProxy(DamageSource source, CallbackInfo ci) {
-        var canRelayDeathMessage = JsonConfiguration.getUserInstance().getValue("minecraft-player-death-messages").getAsBoolean();
+        boolean canRelayDeathMessage = JsonConfiguration.getUserInstance().getValue("minecraft-player-death-messages").getAsBoolean();
         if (!canRelayDeathMessage) return;
         
         var damageSources = this.world.getDamageSources();

@@ -7,6 +7,7 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.metadata.ModEnvironment;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.text.Text;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
@@ -21,10 +22,10 @@ public class WumpusLink implements DedicatedServerModInitializer {
     static { // Our initialization needs to be completed before the Fabric loader starts its own initialization process.
         WumpusLink.initialize();
 
-        JsonPrimitive canSendStatusMessages = JsonConfiguration.getUserInstance().getValue("minecraft-server-status-messages");
+        boolean canSendStatusMessages = JsonConfiguration.getUserInstance().getValue("minecraft-server-status-messages").getAsBoolean();
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            if (canSendStatusMessages.getAsString().equals("true")) {
+            if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Starting")
                         .setDescription("Loading worlds...")
@@ -35,7 +36,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            if (canSendStatusMessages.getAsString().equals("true")) {
+            if (canSendStatusMessages) {
                 var modCount = FabricLoader.getInstance().getAllMods().stream()
                         .filter(mod -> {
                             var modId = mod.getMetadata().getId();
@@ -58,7 +59,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            if (canSendStatusMessages.getAsString().equals("true")) {
+            if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Stopping")
                         .setDescription("Unloading players and worlds...")
@@ -69,7 +70,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
         });
 
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            if (canSendStatusMessages.getAsString().equals("true")) {
+            if (canSendStatusMessages) {
                 var embed = new EmbedBuilder()
                         .setTitle("Server Offline")
                         .setColor(Color.RED);
@@ -137,36 +138,6 @@ public class WumpusLink implements DedicatedServerModInitializer {
         MessageProxy.connectToDiscord();
     }
 
-
-    private static String getDefaultConfig() {
-        return """
-                # Create application and with bot account at https://discord.com/developers/applications/
-                discord-bot-token=
-                                
-                # Desired Discord channel to proxy messages to and from the Minecraft server.
-                # Bot account will require permissions to send messages and embeds in this channel.
-                discord-channel-id=
-                                
-                # Discord webhook linked to the channel above.
-                # Used to display Minecraft player skins and usernames in relayed Discord chat messages.
-                discord-webhook-url=
-                                
-                # Whether to send Minecraft server status messages to the Discord channel.
-                minecraft-server-status-messages=true
-                                
-                # Whether to send Minecraft player death messages to the Discord channel.
-                minecraft-player-death-messages=true
-                                
-                # Whether to send Minecraft player join and leave messages to the Discord channel.
-                minecraft-join-leave-messages=true
-                                
-                # Whether to relay Minecraft player chat messages to the Discord channel.
-                minecraft-chat-messages=true
-                                
-                # Whether to send Minecraft player advancement messages to the Discord channel.
-                minecraft-advancement-messages=true
-                """;
-    }
 
     static URL createUrl(String string) {
         try {

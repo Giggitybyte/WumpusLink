@@ -30,7 +30,7 @@ public class ServerPlayNetworkHandlerMixin {
 
     @Inject(method = "onDisconnected", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Z)V"))
     public void playerDisconnectMessageProxy(Text reason, CallbackInfo ci) {
-        var canRelayDisconnectMessages = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();
+        boolean canRelayDisconnectMessages = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();
         if (!canRelayDisconnectMessages) return;
 
         var embed = new EmbedBuilder()

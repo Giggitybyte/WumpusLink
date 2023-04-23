@@ -26,7 +26,7 @@ public class PlayerManagerMixin {
             )
     )
     public void playerConnectMessageProxy(ClientConnection connection, ServerPlayerEntity player, CallbackInfo ci) {
-        var canRelayJoinMessage = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();
+        boolean canRelayJoinMessage = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();
         if (!canRelayJoinMessage) return;
 
         var playTimeTicks = player.getStatHandler().getStat(Stats.CUSTOM, Stats.PLAY_TIME);

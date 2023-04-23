@@ -106,7 +106,7 @@ public class MessageProxy {
         return sendMessageToDiscord(null, null, messageText);
     }
 
-    static void connectToDiscord() {
+     static void connectToDiscord() {
         disconnectFromDiscord();
 
         var token = JsonConfiguration.getUserInstance().getValue("discord-bot-token").getAsString();
