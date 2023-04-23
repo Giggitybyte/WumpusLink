@@ -86,51 +86,12 @@ public class WumpusLink implements DedicatedServerModInitializer {
 
     @Override
     public void onInitializeServer() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            var configCommand = CommandManager.literal("config")
-                    .requires(Permissions.require("wumpuslink.reload.config", 4))
-                    .executes(ctx -> {
-                        JsonConfiguration.getUserInstance();
-                        ctx.getSource().sendFeedback(Text.literal("WumpusLink configuration reload complete"), false);
-                        return 1;
-                    });
-
-            var discordCommand = CommandManager.literal("discord")
-                    .requires(Permissions.require("wumpuslink.reload.discord", 4))
-                    .executes(ctx -> {
-                        MessageProxy.connectToDiscord();
-                        ctx.getSource().sendFeedback(Text.literal(("Discord client reload complete")), false);
-                        return 1;
-                    });
-
-            var reloadCommand = CommandManager.literal("reload")
-                    .requires(Permissions.require("wumpuslink.reload", 4)) // otherwise OP
-                    .executes(ctx -> {
-                        WumpusLink.initialize();
-                        ctx.getSource().sendFeedback(Text.literal(("WumpusLink reload complete")), false);
-                        return 1;
-                    })
-                    .then(configCommand)
-                    .then(discordCommand)
-                    .build();
-
-            var wumpusLinkCommand = CommandManager.literal("wumpuslink")
-                    .then(reloadCommand)
-                    .build();
-
-            dispatcher.getRoot().addChild(wumpusLinkCommand);
-        });
+        JsonConfiguration.getUserInstance();
+        Commands.register();
 
         LoggerFactory.getLogger("WumpusLink").info("Loaded successfully :D");
     }
 
-    public static URL getMinecraftPlayerHeadUrl(UUID playerUuid) {
-        return createUrl("https://crafatar.com/renders/head/" + playerUuid + "?default=mhf_Steve&overlay");
-    }
-
-    public static String getMinecraftPlayerRender(UUID playerUuid) {
-        return "https://crafatar.com/renders/body/" + playerUuid;
-    }
 
 
     static void initialize() {
@@ -139,11 +100,4 @@ public class WumpusLink implements DedicatedServerModInitializer {
     }
 
 
-    static URL createUrl(String string) {
-        try {
-            return new URL(string); // Checked exceptions are for clowns.
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
