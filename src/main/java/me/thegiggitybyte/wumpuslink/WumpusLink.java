@@ -99,7 +99,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                     .requires(Permissions.require("wumpuslink.reload.config", 4))
                     .executes(ctx -> {
                         initializeConfig();
-                        ctx.getSource().sendFeedback(Text.literal("WumpusLink configuration reload complete"), false);
+                        ctx.getSource().sendFeedback(() -> Text.literal("WumpusLink configuration reload complete"), false);
                         return 1;
                     });
 
@@ -107,7 +107,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                     .requires(Permissions.require("wumpuslink.reload.discord", 4))
                     .executes(ctx -> {
                         MessageProxy.connectToDiscord();
-                        ctx.getSource().sendFeedback(Text.literal(("Discord client reload complete")), false);
+                        ctx.getSource().sendFeedback(() -> Text.literal(("Discord client reload complete")), false);
                         return 1;
                     });
 
@@ -115,7 +115,7 @@ public class WumpusLink implements DedicatedServerModInitializer {
                     .requires(Permissions.require("wumpuslink.reload", 4)) // otherwise OP
                     .executes(ctx -> {
                         WumpusLink.initialize();
-                        ctx.getSource().sendFeedback(Text.literal(("WumpusLink reload complete")), false);
+                        ctx.getSource().sendFeedback(() -> Text.literal(("WumpusLink reload complete")), false);
                         return 1;
                     })
                     .then(configCommand)
