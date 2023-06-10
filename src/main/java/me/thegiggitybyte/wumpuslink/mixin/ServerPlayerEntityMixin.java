@@ -40,9 +40,9 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
         var canRelayDeathMessage = WumpusLink.getConfig().getOrDefault("minecraft-player-death-messages", true);
         if (!canRelayDeathMessage) return;
         
-        var damageSources = this.world.getDamageSources();
-        var recentDamage = this.getDamageTracker().getMostRecentDamage();
-        var damageSource = recentDamage == null ? damageSources.generic() : recentDamage.getDamageSource();
+        var damageSources = this.getWorld().getDamageSources();
+        var recentDamage = this.getRecentDamageSource();
+        var damageSource = recentDamage == null ? damageSources.generic() : recentDamage;
         
         var embed = new EmbedBuilder();
         Entity responsibleEntity = null;
@@ -51,17 +51,17 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity {
             embed.setTitle("Spontaneous death");
         } else if (damageSource == damageSources.fall()) {
             var furthestFallDamage = ((DamageTrackerAccessor) this.getDamageTracker()).getFurthestFall();
-            if (furthestFallDamage.getDamageSource() != damageSources.fall() && furthestFallDamage.getDamageSource() != damageSources.outOfWorld()) {
-                if (recentDamage.getAttacker() != null && furthestFallDamage.getAttacker() != null) {
+            if (furthestFallDamage.damageSource() != damageSources.fall() && furthestFallDamage.damageSource() != damageSources.outOfWorld()) {
+                if (recentDamage.getAttacker() != null && furthestFallDamage.damageSource().getAttacker() != null) {
                     var recentAttackerUuid = recentDamage.getAttacker().getUuid();
-                    var fallDamageAttackerUuid = furthestFallDamage.getAttacker().getUuid();
+                    var fallDamageAttackerUuid = furthestFallDamage.damageSource().getAttacker().getUuid();
 
                     if (!fallDamageAttackerUuid.equals(recentAttackerUuid))
                         responsibleEntity = recentDamage.getAttacker();
                 }
             }
 
-            embed.setTitle("Fell from " + recentDamage.getFallDistance() + "m");
+            embed.setTitle("Fell");
         } else {
             var embedTitle = switch (damageSource.getName()) {
                 case "drown" -> "Drowned";

@@ -31,6 +31,7 @@ public class PlayerAdvancementTrackerMixin {
 
         var embed = new EmbedBuilder();
         var advancementDisplay = advancement.getDisplay();
+        assert advancementDisplay != null;
         var advancementFrame = advancementDisplay.getFrame();
 
         switch (advancementFrame.getId()) {
