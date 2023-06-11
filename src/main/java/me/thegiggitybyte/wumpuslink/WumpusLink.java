@@ -1,36 +1,20 @@
 package me.thegiggitybyte.wumpuslink;
 
-import me.lucko.fabric.api.permissions.v0.Permissions;
-import me.thegiggitybyte.wumpuslink.error.ConfigurationFieldMissingError;
-import me.thegiggitybyte.wumpuslink.error.ConfigurationValueEmptyError;
-import net.darktree.simpleconfig.SimpleConfig;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.fabricmc.api.DedicatedServerModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.text.Text;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.net.URL;
-import java.util.UUID;
 
 public class WumpusLink implements DedicatedServerModInitializer {
-    private static final String[] REQUIRED_CONFIG_KEYS;
-    private static SimpleConfig config;
 
     static { // Our initialization needs to be completed before the Fabric loader starts its own initialization process.
-        REQUIRED_CONFIG_KEYS = new String[]{
-                "discord-bot-token",
-                "discord-channel-id",
-                "discord-webhook-url"
-        };
-
         WumpusLink.initialize();
 
-        boolean canSendStatusMessages = WumpusLink.getConfig().getOrDefault("minecraft-server-status-messages", true);
+        boolean canSendStatusMessages = JsonConfiguration.getUserInstance().getValue("minecraft-server-status-messages").getAsBoolean();
 
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             if (canSendStatusMessages) {
@@ -88,115 +72,22 @@ public class WumpusLink implements DedicatedServerModInitializer {
 
             MessageProxy.disconnectFromDiscord();
         });
-
-        ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, resourceManager) -> initializeConfig());
     }
 
     @Override
     public void onInitializeServer() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            var configCommand = CommandManager.literal("config")
-                    .requires(Permissions.require("wumpuslink.reload.config", 4))
-                    .executes(ctx -> {
-                        initializeConfig();
-                        ctx.getSource().sendFeedback(() -> Text.literal("WumpusLink configuration reload complete"), false);
-                        return 1;
-                    });
-
-            var discordCommand = CommandManager.literal("discord")
-                    .requires(Permissions.require("wumpuslink.reload.discord", 4))
-                    .executes(ctx -> {
-                        MessageProxy.connectToDiscord();
-                        ctx.getSource().sendFeedback(() -> Text.literal(("Discord client reload complete")), false);
-                        return 1;
-                    });
-
-            var reloadCommand = CommandManager.literal("reload")
-                    .requires(Permissions.require("wumpuslink.reload", 4)) // otherwise OP
-                    .executes(ctx -> {
-                        WumpusLink.initialize();
-                        ctx.getSource().sendFeedback(() -> Text.literal(("WumpusLink reload complete")), false);
-                        return 1;
-                    })
-                    .then(configCommand)
-                    .then(discordCommand)
-                    .build();
-
-            var wumpusLinkCommand = CommandManager.literal("wumpuslink")
-                    .then(reloadCommand)
-                    .build();
-
-            dispatcher.getRoot().addChild(wumpusLinkCommand);
-        });
+        JsonConfiguration.getUserInstance();
+        Commands.register();
 
         LoggerFactory.getLogger("WumpusLink").info("Loaded successfully :D");
     }
 
-    public static URL getMinecraftPlayerHeadUrl(UUID playerUuid) {
-        return createUrl("https://crafatar.com/renders/head/" + playerUuid + "?default=mhf_Steve&overlay");
-    }
 
-    public static String getMinecraftPlayerRender(UUID playerUuid) {
-        return "https://crafatar.com/renders/body/" + playerUuid;
-    }
-
-    public static SimpleConfig getConfig() {
-        return config;
-    }
 
     static void initialize() {
-        WumpusLink.initializeConfig();
+        JsonConfiguration.getUserInstance();
         MessageProxy.connectToDiscord();
     }
 
-    private static void initializeConfig() throws RuntimeException {
-        config = SimpleConfig.of("wumpuslink")
-                .provider(fileName -> getDefaultConfig())
-                .request();
 
-        for (var key : REQUIRED_CONFIG_KEYS) {
-            if (config.get(key) == null)
-                throw new ConfigurationFieldMissingError(key);
-            else if (config.get(key).trim().length() == 0)
-                throw new ConfigurationValueEmptyError(key);
-        }
-    }
-
-    private static String getDefaultConfig() {
-        return """
-                # Create application and with bot account at https://discord.com/developers/applications/
-                discord-bot-token=
-                                
-                # Desired Discord channel to proxy messages to and from the Minecraft server.
-                # Bot account will require permissions to send messages and embeds in this channel.
-                discord-channel-id=
-                                
-                # Discord webhook linked to the channel above.
-                # Used to display Minecraft player skins and usernames in relayed Discord chat messages.
-                discord-webhook-url=
-                                
-                # Whether to send Minecraft server status messages to the Discord channel.
-                minecraft-server-status-messages=true
-                                
-                # Whether to send Minecraft player death messages to the Discord channel.
-                minecraft-player-death-messages=true
-                                
-                # Whether to send Minecraft player join and leave messages to the Discord channel.
-                minecraft-join-leave-messages=true
-                                
-                # Whether to relay Minecraft player chat messages to the Discord channel.
-                minecraft-chat-messages=true
-                                
-                # Whether to send Minecraft player advancement messages to the Discord channel.
-                minecraft-advancement-messages=true
-                """;
-    }
-
-    static URL createUrl(String string) {
-        try {
-            return new URL(string); // Checked exceptions are for clowns.
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
