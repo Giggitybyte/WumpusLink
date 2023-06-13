@@ -1,7 +1,7 @@
 package me.thegiggitybyte.wumpuslink.mixin;
 
 import me.thegiggitybyte.wumpuslink.MessageProxy;
-import me.thegiggitybyte.wumpuslink.WumpusLink;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.advancement.PlayerAdvancementTracker;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -26,8 +26,7 @@ public class PlayerAdvancementTrackerMixin {
                     target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Z)V")
     )
     public void playerAdvancementMessageProxy(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
-        boolean canRelayAdvancements = WumpusLink.getConfig().getOrDefault("minecraft-advancement-messages", true);
-        if (!canRelayAdvancements) return;
+        boolean canRelayAdvancements = JsonConfiguration.getUserInstance().getValue("minecraft-advancement-messages").getAsBoolean();        if (!canRelayAdvancements) return;
 
         var embed = new EmbedBuilder();
         var advancementDisplay = advancement.getDisplay();

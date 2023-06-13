@@ -1,7 +1,8 @@
 package me.thegiggitybyte.wumpuslink.mixin;
 
 import me.thegiggitybyte.wumpuslink.MessageProxy;
-import me.thegiggitybyte.wumpuslink.WumpusLink;
+import me.thegiggitybyte.wumpuslink.config.JsonConfiguration;
+import me.thegiggitybyte.wumpuslink.utils.Utils;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,8 +26,7 @@ public class PlayerManagerMixin {
             )
     )
     public void playerConnectMessageProxy(ClientConnection connection, ServerPlayerEntity player, CallbackInfo ci) {
-        var canRelayJoinMessage = WumpusLink.getConfig().getOrDefault("minecraft-join-leave-messages", true);
-        if (!canRelayJoinMessage) return;
+        boolean canRelayJoinMessage = JsonConfiguration.getUserInstance().getValue("minecraft-join-leave-messages").getAsBoolean();        if (!canRelayJoinMessage) return;
 
         var playTimeTicks = player.getStatHandler().getStat(Stats.CUSTOM, Stats.PLAY_TIME);
         var leaveCount = player.getStatHandler().getStat(Stats.CUSTOM, Stats.LEAVE_GAME);
@@ -35,7 +35,7 @@ public class PlayerManagerMixin {
         if ((leaveCount == 0) & (playTimeTicks == 0)) {
             embed.setTitle("New player");
             embed.setDescription("Joined the server for the first time");
-            embed.setThumbnail(WumpusLink.getMinecraftPlayerRender(player.getUuid()));
+            embed.setThumbnail(Utils.getMinecraftPlayerRender(player.getUuid()));
             embed.setColor(Color.YELLOW);
 
         } else {
